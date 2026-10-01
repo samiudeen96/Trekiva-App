@@ -1,0 +1,39 @@
+{%- comment -%}
+  App embed: loads one small deferred script. Nothing renders in the page flow (the popup is a
+  position:fixed <dialog> created by the script), so there is no layout shift. The stylesheet is
+  fetched by the script only when a popup is actually about to be shown.
+{%- endcomment -%}
+<script
+  id="twp-script"
+  src="{{ 'welcome-popup.js' | asset_url }}"
+  defer
+  data-shop="{{ shop.permanent_domain }}"
+  data-proxy="/apps/welcome-popup"
+  data-css="{{ 'welcome-popup.css' | asset_url }}"
+  data-root="{{ routes.root_url }}"
+  data-design-mode="{{ request.design_mode }}"
+  data-disable-in-editor="{{ block.settings.disable_in_editor }}"
+  data-close-label="{{ 'popup.close' | t }}"
+  data-email-label="{{ 'popup.email_label' | t }}"
+  data-invalid-email="{{ 'popup.invalid_email' | t }}"
+  data-sending="{{ 'popup.sending' | t }}"
+></script>
+
+{% schema %}
+{
+  "name": "Trekiva Popup",
+  "target": "body",
+  "settings": [
+    {
+      "type": "header",
+      "content": "Campaigns, discount and display rules are configured in the Trekiva App → Popup."
+    },
+    {
+      "type": "checkbox",
+      "id": "disable_in_editor",
+      "label": "Don't force the popup open in the theme editor",
+      "default": false
+    }
+  ]
+}
+{% endschema %}

@@ -1,0 +1,203 @@
+// Welcome-discount popup app. PostgreSQL via Prisma.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Session {
+  id                  String    @id
+  shop                String
+  state               String
+  isOnline            Boolean   @default(false)
+  scope               String?
+  expires             DateTime?
+  accessToken         String
+  userId              BigInt?
+  firstName           String?
+  lastName            String?
+  email               String?
+  accountOwner        Boolean   @default(false)
+  locale              String?
+  collaborator        Boolean?  @default(false)
+  emailVerified       Boolean?  @default(false)
+  refreshToken        String?
+  refreshTokenExpires DateTime?
+
+  @@index([shop])
+}
+
+enum PopupTemplate {
+  CLASSIC // centred card, no image
+  SPLIT // image left, form right, optional "No, thanks" link
+  COUNTDOWN // image left, subtitle + countdown timer above the form
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED
+}
+
+enum DiscountMode {
+  SHARED
+  UNIQUE
+}
+
+enum TriggerMode {
+  DELAY // delay of 0 seconds == immediate
+  EXIT_INTENT // desktop only; mobile falls back to DELAY
+}
+
+enum Frequency {
+  EVERY_PAGE_LOAD // every navigation and reload
+  EVERY_REFRESH // first view of a session + every reload (not other navigations)
+  ONCE_PER_SESSION
+  ONCE_EVERY_X_DAYS
+  UNTIL_CLAIMED // keep showing (even after dismissal) until claimed
+}
+
+enum DeviceTarget {
+  ALL
+  DESKTOP
+  MOBILE
+}
+
+enum PageTarget {
+  ALL
+  SELECTED
+}
+
+enum ClaimStatus {
+  PENDING // claim row created, work in progress
+  SENT // discount emailed
+  EMAIL_FAILED // discount ready but email provider failed; retryable
+  FAILED // Shopify call failed; retryable
+  INELIGIBLE // existing customer with orders on a first-order campaign
+}
+
+enum StatType {
+  VIEW
+  SUBMISSION
+  CLAIM
+  DUPLICATE
+  EMAIL_SENT
+  EMAIL_FAILED
+}
+
+model Campaign {
+  id     String  @id @default(cuid())
+  shop   String
+  name   String
+  active Boolean @default(false)
+
+  // Template (layout) + template-specific content
+  template       PopupTemplate @default(CLASSIC)
+  subtitle       String        @default("")
+  showCountdown  Boolean       @default(false)
+  countdownHours Int           @default(24) // per-visitor timer, starts the first time the popup is shown
+  declineText    String        @default("") // "No, thanks" link; blank = hidden
+
+  // Popup content
+  title                String @default("Get 10% Off Your First Order")
+  description          String @default("Join our list and we'll email your welcome discount code.")
+  buttonText           String @default("Get 10% Off")
+  emailPlaceholder     String @default("Enter your email address")
+  successMessage       String @default("Your 10% welcome offer is on its way! Check your inbox for your discount code.")
+  alreadyClaimedMessage String @default("You've already claimed your welcome offer. Please check your inbox for your discount code.")
+  notEligibleMessage   String @default("This welcome offer is only available on a first order.")
+  errorMessage         String @default("Something went wrong. Please try again in a moment.")
+  privacyNote          String @default("")
+
+  // Appearance
+  backgroundColor String @default("#ffffff")
+  textColor       String @default("#1a1a1a")
+  buttonColor     String @default("#1a1a1a")
+  buttonTextColor String @default("#ffffff")
+  imageUrl        String @default("")
+
+  // Discount
+  discountType  DiscountType @default(PERCENTAGE)
+  discountValue Decimal      @default(10) @db.Decimal(10, 2)
+  discountMode  DiscountMode @default(SHARED)
+  sharedCode    String       @default("WELCOME10")
+  codePrefix    String       @default("WELCOME10")
+  expiryDays    Int? // unique codes only; null = never expires
+  firstOrderOnly    Boolean  @default(true)
+  oncePerCustomer   Boolean  @default(true)
+
+  // Shopify customer handling
+  createCustomer Boolean @default(true)
+  tagCustomer    Boolean @default(true)
+  customerTag    String  @default("welcome10_claimed")
+
+  // Display rules
+  triggerMode     TriggerMode  @default(DELAY)
+  delaySeconds    Int          @default(5)
+  minPageViews    Int          @default(1)
+  frequency       Frequency    @default(ONCE_EVERY_X_DAYS)
+  frequencyDays   Int          @default(7)
+  stopAfterClaim  Boolean      @default(true)
+  deviceTarget    DeviceTarget @default(ALL)
+  pageTarget      PageTarget   @default(ALL)
+  pagePaths       String[]     @default([])
+
+  // Email
+  emailSubject     String @default("Welcome to {{ shop_name }} — here's {{ discount_value }} off your first order")
+  emailBody        String @default("Thanks for joining {{ shop_name }}.\n\nUse the code below to get {{ discount_value }} off your first order:\n\n{{ discount_code }}\n\nShop now:\n{{ shop_url }}")
+  emailFromName    String @default("")
+  emailFromAddress String @default("")
+  emailReplyTo     String @default("")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  claims WelcomeClaim[]
+  stats  CampaignDailyStat[]
+
+  @@index([shop, active])
+}
+
+model WelcomeClaim {
+  id                String      @id @default(cuid())
+  shop              String
+  campaignId        String
+  email             String // normalized: trimmed + lowercased
+  shopifyCustomerId String?
+  shopifyDiscountId String?
+  discountCode      String?
+  status            ClaimStatus @default(PENDING)
+  attemptCount      Int         @default(1)
+  lastError         String?
+  claimedAt         DateTime    @default(now())
+  emailSentAt       DateTime?
+  redeemedAt        DateTime?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  // The one-claim-per-email-per-campaign guarantee lives in the database,
+  // so concurrent requests cannot create duplicates.
+  @@unique([shop, campaignId, email])
+  @@index([shop, email])
+  @@index([shop, discountCode])
+  @@index([campaignId, status])
+}
+
+model CampaignDailyStat {
+  id         String   @id @default(cuid())
+  shop       String
+  campaignId String
+  date       DateTime @db.Date
+  type       StatType
+  count      Int      @default(0)
+
+  campaign Campaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, date, type])
+  @@index([shop, date])
+}

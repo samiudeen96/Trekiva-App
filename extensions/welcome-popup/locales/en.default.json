@@ -1,0 +1,8 @@
+{
+  "popup": {
+    "close": "Close",
+    "email_label": "Email address",
+    "invalid_email": "Please enter a valid email address.",
+    "sending": "Sending…"
+  }
+}

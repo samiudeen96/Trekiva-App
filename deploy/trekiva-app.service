@@ -1,0 +1,20 @@
+[Unit]
+Description=Trekiva App (Shopify popup)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=trekiva
+WorkingDirectory=/opt/trekiva-app
+EnvironmentFile=/opt/trekiva-app/.env.production
+Environment=NODE_ENV=production
+Environment=PORT=3000
+# Apply any new DB migrations on every (re)start, then serve.
+ExecStartPre=/usr/bin/npx prisma migrate deploy
+ExecStart=/usr/bin/npm run start
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

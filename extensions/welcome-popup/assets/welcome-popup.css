@@ -1,0 +1,50 @@
+dialog.twp{--twp-bg:#fff;--twp-fg:#1a1a1a;--twp-btn:#1a1a1a;--twp-btn-fg:#fff;box-sizing:border-box;width:min(92vw,720px);max-height:90vh;margin:auto;padding:0;border:0;border-radius:12px;background:var(--twp-bg);color:var(--twp-fg);box-shadow:0 20px 60px rgba(0,0,0,.35);overflow:auto;overscroll-behavior:contain;font:inherit}
+dialog.twp::backdrop{background:rgba(0,0,0,.55)}
+dialog.twp[open]{animation:twp-in .22s ease-out}
+@keyframes twp-in{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){dialog.twp[open]{animation:none}}
+.twp *{box-sizing:border-box}
+.twp__panel{display:flex;position:relative}
+.twp__img{display:none;flex:0 0 40%;background-size:cover;background-position:center}
+.twp__body{flex:1;padding:40px 32px 32px}
+.twp__close{position:absolute;top:6px;right:6px;width:44px;height:44px;border:0;border-radius:50%;background:transparent;color:inherit;font-size:28px;line-height:1;cursor:pointer}
+.twp__close:hover{background:rgba(127,127,127,.15)}
+.twp :focus-visible{outline:3px solid currentColor;outline-offset:2px}
+.twp__title{margin:0 0 8px;font-size:1.6rem;line-height:1.2;font-weight:700;color:inherit}
+.twp__desc{margin:0 0 20px;font-size:1rem;line-height:1.5;opacity:.85}
+.twp__input{display:block;width:100%;min-height:48px;margin:0 0 12px;padding:0 14px;border:1px solid rgba(127,127,127,.6);border-radius:8px;background:#fff;color:#1a1a1a;font:inherit;font-size:16px}
+.twp__btn{display:block;width:100%;min-height:48px;border:0;border-radius:8px;background:var(--twp-btn);color:var(--twp-btn-fg);font:inherit;font-size:1rem;font-weight:600;cursor:pointer}
+.twp__btn[disabled]{opacity:.65;cursor:progress}
+.twp__msg{min-height:1.5em;margin:12px 0 0;font-size:.95rem;line-height:1.4}
+.twp__msg:empty{min-height:0;margin:0}
+.twp__msg[data-state=error]{font-weight:600}
+.twp__msg[data-state=done]{font-size:1.05rem;font-weight:600}
+.twp__note{margin:12px 0 0;font-size:.8rem;opacity:.7}
+.twp__hp{position:absolute!important;left:-10000px;width:1px;height:1px;opacity:0;pointer-events:none}
+.twp__sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (min-width:750px){.twp__img.has-img{display:block}}
+.twp--classic .twp__img{display:none}
+@media (min-width:750px){.twp--classic .twp__img.has-img{display:block}}
+@media (max-width:749px){dialog.twp{width:100%;max-width:100%;margin:auto 0 0;border-radius:16px 16px 0 0}.twp__body{padding:36px 20px 24px}}
+
+/* ---- Templates ---- */
+.twp--split,.twp--countdown{width:min(94vw,860px)}
+.twp--split .twp__img,.twp--countdown .twp__img{flex-basis:50%}
+.twp__img--fallback{background-image:linear-gradient(135deg,color-mix(in srgb,var(--twp-fg) 30%,var(--twp-bg)),color-mix(in srgb,var(--twp-fg) 8%,var(--twp-bg)))}
+.twp--split .twp__body,.twp--countdown .twp__body{display:flex;flex-direction:column;justify-content:center;text-align:center;padding:48px 36px}
+.twp--countdown .twp__title{text-transform:uppercase;font-size:2rem;letter-spacing:.01em}
+.twp__sub{margin:0 0 16px;font-size:.95rem;font-weight:700;text-transform:uppercase;letter-spacing:.02em;opacity:.6}
+.twp__cd{display:flex;align-items:center;justify-content:center;gap:8px;margin:4px 0 24px;font-variant-numeric:tabular-nums}
+.twp__cd-cell{min-width:54px;padding:12px 8px;border-radius:8px;background:rgba(127,127,127,.18);font-size:1.5rem;line-height:1}
+.twp__cd-sep{font-size:1.4rem;opacity:.7}
+.twp__decline{align-self:center;margin:14px auto 0;padding:10px 12px;border:0;background:none;color:inherit;font:inherit;cursor:pointer;text-decoration:none}
+.twp__decline:hover{text-decoration:underline}
+.twp--split .twp__input,.twp--countdown .twp__input{text-align:left}
+@media (max-width:749px){
+  .twp__img.has-img{display:block;flex:none;height:120px}
+  .twp--split .twp__panel,.twp--countdown .twp__panel{flex-direction:column}
+  .twp--split .twp__body,.twp--countdown .twp__body{padding:24px 20px}
+  .twp--countdown .twp__title{font-size:1.5rem}
+  .twp__cd-cell{min-width:46px;font-size:1.25rem}
+  .twp--classic .twp__img.has-img{display:none}
+}

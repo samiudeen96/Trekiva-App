@@ -1,0 +1,47 @@
+# Run `npm run config:link` to connect this file to your app in the Partner Dashboard
+# (it fills client_id, application_url and redirect URLs).
+client_id = "3d65bcc4cd60dafcad278e2aeb663931"
+name = "Trekiva App"
+application_url = "https://example.com"
+embedded = true
+
+[build]
+include_config_on_deploy = true
+
+[access_scopes]
+# customers: look up / create / tag the claiming customer
+# discounts: create unique single-use codes, validate shared codes
+# orders:    read-only, used by the orders/create webhook to record redemptions
+scopes = "read_customers,write_customers,read_discounts,write_discounts,read_orders"
+
+[auth]
+redirect_urls = ["https://example.com/auth/callback"]
+
+[webhooks]
+api_version = "2026-07"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/uninstalled"]
+  uri = "/webhooks/app/uninstalled"
+
+  [[webhooks.subscriptions]]
+  topics = ["app/scopes_update"]
+  uri = "/webhooks/app/scopes_update"
+
+  # Records discount redemptions for analytics (matches order discount codes to claims).
+  [[webhooks.subscriptions]]
+  topics = ["orders/create"]
+  uri = "/webhooks/orders/create"
+
+  # Mandatory privacy webhooks
+  [[webhooks.subscriptions]]
+  uri = "/webhooks/compliance"
+  compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
+
+# Storefront script talks to the app through this proxy: same-origin, no CORS, and every
+# request is signed by Shopify so the shop is verified server-side.
+# Storefront URL: https://<shop>/apps/welcome-popup/welcome-config
+[app_proxy]
+url = "https://example.com/api/public"
+subpath = "welcome-popup"
+prefix = "apps"
